@@ -1,0 +1,13 @@
+{
+  "license": "AML",
+  "scripts": {
+    "build": "webpack"
+  },
+  "dependencies": {
+    "chrome-har": "file:../chrome-har"
+  },
+  "devDependencies": {
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.2.3"
+  }
+}
