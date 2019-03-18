@@ -1,12 +1,14 @@
 {
   "license": "AML",
   "scripts": {
-    "build": "webpack"
+    "build": "webpack",
+    "watch": "webpack --watch"
   },
   "dependencies": {
     "chrome-har": "file:../chrome-har"
   },
   "devDependencies": {
+    "copy-webpack-plugin": "^5.0.0",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.2.3"
   }
