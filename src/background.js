@@ -2,13 +2,14 @@ import { harFromMessages } from 'chrome-har'
 import { saveAs } from 'file-saver';
 import JSZip from "jszip";
 
+let debuggee
 let harEvents = []
 let logEntries = []
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	switch (request.action) {
 		case 'start': {
-			const debuggee = {tabId: request.tab.id}
+			debuggee = {tabId: request.tab.id}
 			chrome.debugger.attach(debuggee, "1.2", () => {
 				if (chrome.runtime.lastError) return
 				chrome.debugger.sendCommand(debuggee, 'Page.enable', {})
@@ -18,6 +19,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			break
 		}
 		case 'stop': {
+			chrome.debugger.detach(debuggee)
 			const har = harFromMessages(harEvents)
 			const log = logEntries.map(entry => {
 				return entry.args.map(arg => arg.value).join(' ')
