@@ -1,4 +1,7 @@
-import chromeHar from 'chrome-har'
+import { harFromMessages } from 'chrome-har'
+import { saveAs } from 'file-saver';
+
+let harEvents = []
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	switch (request.action) {
@@ -12,14 +15,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			break
 		}
 		case 'stop': {
-			const har = chromeHar.harFromMessages(harEvents)
-			console.log(har)
+			const har = harFromMessages(harEvents)
+			harEvents = []
+			const file = new File([JSON.stringify(har)], "har.har", {type: "text/plain;charset=utf-8"})
+			saveAs(file)
 			break
 		}
 	}
 })
 
-const harEvents = []
 chrome.debugger.onEvent.addListener((_source, method, params) => {
 	harEvents.push({method, params})
 })

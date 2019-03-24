@@ -5,7 +5,8 @@
     "watch": "webpack --watch"
   },
   "dependencies": {
-    "chrome-har": "file:../chrome-har"
+    "chrome-har": "juvirez/chrome-har",
+    "file-saver": "^2.0.1"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.0.0",
