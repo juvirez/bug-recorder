@@ -1,5 +1,6 @@
 import { harFromMessages } from 'chrome-har'
 import { saveAs } from 'file-saver';
+import JSZip from "jszip";
 
 let harEvents = []
 let logEntries = []
@@ -18,11 +19,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		}
 		case 'stop': {
 			const har = harFromMessages(harEvents)
+			const log = logEntries.map(entry => {
+				return entry.args.map(arg => arg.value).join(' ')
+			}).join('\n')
 			harEvents = []
 			logEntries = []
-			const file = new File([JSON.stringify(har)], "har.har", {type: "text/plain;charset=utf-8"})
-			saveAs(file)
-			console.log(logEntries)
+
+			let zip = new JSZip()
+			zip.file('har.har', JSON.stringify(har))
+			zip.file('console.log', log)
+			zip.generateAsync({type: 'blob'})
+				.then((blob) => {
+					saveAs(blob, 'site.zip')
+				})
 			break
 		}
 	}

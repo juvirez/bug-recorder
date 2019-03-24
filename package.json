@@ -6,7 +6,8 @@
   },
   "dependencies": {
     "chrome-har": "juvirez/chrome-har",
-    "file-saver": "^2.0.1"
+    "file-saver": "^2.0.1",
+    "jszip": "^3.2.1"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^5.0.0",
