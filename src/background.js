@@ -46,7 +46,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 				chrome.debugger.detach(debuggee)
 				const har = harFromMessages(harEvents)
 				const log = logEntries.map(entry => {
-					return entry.args.map(arg => arg.value).join(' ')
+					let value = entry.args.map(arg => arg.value).join(' ')
+					let timestamp = new Date(entry.timestamp).toISOString()
+					return entry.type + ' ' + timestamp + ' ' + value
 				}).join('\n')
 				harEvents = []
 				logEntries = []
