@@ -19,7 +19,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 						chromeMediaSource: 'tab'
 					}
 				}
-			};
+			}
 
 			chrome.tabCapture.capture(constraints, stream => {
 				videoRecorder = new MediaRecorder(stream, {mimeType: 'video/webm'});
@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 					videoChunks.push(e.data)
 				}
 				videoRecorder.start()
-			});
+			})
 
 			debuggee = {tabId: request.tab.id}
 			chrome.debugger.attach(debuggee, "1.2", () => {
