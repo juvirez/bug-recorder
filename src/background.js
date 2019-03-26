@@ -5,10 +5,30 @@ import JSZip from "jszip";
 let debuggee
 let harEvents = []
 let logEntries = []
+let videoRecorder
+let videoChunks = []
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	switch (request.action) {
 		case 'start': {
+			let constraints = {
+				audio: false,
+				video: true,
+				videoConstraints: {
+					mandatory: {
+						chromeMediaSource: 'tab'
+					}
+				}
+			};
+
+			chrome.tabCapture.capture(constraints, stream => {
+				videoRecorder = new MediaRecorder(stream, {mimeType: 'video/webm'});
+				videoRecorder.ondataavailable = (e) => {
+					videoChunks.push(e.data)
+				}
+				videoRecorder.start()
+			});
+
 			debuggee = {tabId: request.tab.id}
 			chrome.debugger.attach(debuggee, "1.2", () => {
 				if (chrome.runtime.lastError) return
@@ -19,21 +39,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			break
 		}
 		case 'stop': {
-			chrome.debugger.detach(debuggee)
-			const har = harFromMessages(harEvents)
-			const log = logEntries.map(entry => {
-				return entry.args.map(arg => arg.value).join(' ')
-			}).join('\n')
-			harEvents = []
-			logEntries = []
+			videoRecorder.onstop = () => {
+				videoRecorder.stream.getTracks().forEach(track => track.stop());
 
-			let zip = new JSZip()
-			zip.file('har.har', JSON.stringify(har))
-			zip.file('console.log', log)
-			zip.generateAsync({type: 'blob'})
-				.then((blob) => {
-					saveAs(blob, 'site.zip')
-				})
+				let videoBlob = new Blob(videoChunks, {type: 'video/webm'})
+				chrome.debugger.detach(debuggee)
+				const har = harFromMessages(harEvents)
+				const log = logEntries.map(entry => {
+					return entry.args.map(arg => arg.value).join(' ')
+				}).join('\n')
+				harEvents = []
+				logEntries = []
+				videoChunks = []
+
+				let zip = new JSZip()
+				zip.file('har.har', JSON.stringify(har))
+				zip.file('console.log', log)
+				zip.file('screencast.webm', videoBlob)
+				zip.generateAsync({type: 'blob'})
+					.then((blob) => {
+						saveAs(blob, 'site.zip')
+					})
+				}
+			videoRecorder.stop()
 			break
 		}
 	}
