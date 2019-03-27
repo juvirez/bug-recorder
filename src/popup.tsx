@@ -1,5 +1,6 @@
 import { render } from "react-dom";
 import * as React from "react";
+import { StartRequest, RequestAction, StopRequest } from "./background";
 
 class Popup extends React.Component {
   start() {
@@ -7,13 +8,19 @@ class Popup extends React.Component {
     chrome.tabs.query(tabQueryInfo, (tabs: chrome.tabs.Tab[]) => {
       const currentTab = tabs.pop();
       if (currentTab != null) {
-        chrome.runtime.sendMessage({ action: "start", tab: currentTab });
+        const request: StartRequest = {
+          action: RequestAction.Start,
+          tab: currentTab,
+          recordVideo: true
+        };
+        chrome.runtime.sendMessage(request);
       }
     });
   }
 
   stop() {
-    chrome.runtime.sendMessage({ action: "stop" });
+    const request: StopRequest = { action: RequestAction.Stop };
+    chrome.runtime.sendMessage(request);
   }
 
   render() {

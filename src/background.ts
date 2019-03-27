@@ -1,6 +1,7 @@
 import { harFromMessages } from "chrome-har";
 import { saveAs } from "file-saver";
 import * as JSZip from "jszip";
+import { type } from "os";
 
 let debuggee: chrome.debugger.Debuggee = {};
 let harEvents: Object[] = [];
@@ -8,41 +9,43 @@ let logEntries: LogEntry[] = [];
 let videoRecorder: MediaRecorder | null;
 let videoChunks: Blob[] = [];
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  switch (request.action) {
-    case "start": {
-      chrome.tabCapture.capture({ video: true }, stream => {
-        if (stream == null) return;
-        videoRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-        videoRecorder.ondataavailable = e => {
-          videoChunks.push(e.data);
-        };
-        videoRecorder.start();
-      });
+chrome.runtime.onMessage.addListener(
+  (request: Request, sender, sendResponse) => {
+    switch (request.action) {
+      case RequestAction.Start: {
+        chrome.tabCapture.capture({ video: true }, stream => {
+          if (stream == null) return;
+          videoRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+          videoRecorder.ondataavailable = e => {
+            videoChunks.push(e.data);
+          };
+          videoRecorder.start();
+        });
 
-      debuggee = { tabId: request.tab.id };
-      chrome.debugger.attach(debuggee, "1.2", () => {
-        if (chrome.runtime.lastError) return;
-        chrome.debugger.sendCommand(debuggee, "Page.enable", {});
-        chrome.debugger.sendCommand(debuggee, "Network.enable", {});
-        chrome.debugger.sendCommand(debuggee, "Runtime.enable", {});
-      });
-      break;
-    }
-    case "stop": {
-      if (videoRecorder == null) {
-        stop();
-      } else {
-        videoRecorder.stream.getTracks().forEach(track => track.stop());
-        videoRecorder.onstop = () => {
-          stop();
-        };
-        videoRecorder.stop();
+        debuggee = { tabId: request.tab.id };
+        chrome.debugger.attach(debuggee, "1.2", () => {
+          if (chrome.runtime.lastError) return;
+          chrome.debugger.sendCommand(debuggee, "Page.enable", {});
+          chrome.debugger.sendCommand(debuggee, "Network.enable", {});
+          chrome.debugger.sendCommand(debuggee, "Runtime.enable", {});
+        });
+        break;
       }
-      break;
+      case RequestAction.Stop: {
+        if (videoRecorder == null) {
+          stop();
+        } else {
+          videoRecorder.stream.getTracks().forEach(track => track.stop());
+          videoRecorder.onstop = () => {
+            stop();
+          };
+          videoRecorder.stop();
+        }
+        break;
+      }
     }
   }
-});
+);
 
 function stop() {
   const videoBlob = new Blob(videoChunks, { type: "video/webm" });
@@ -85,3 +88,20 @@ interface LogEntry {
 interface LogEntryArg {
   value: Object;
 }
+
+export enum RequestAction {
+  Start,
+  Stop
+}
+
+export interface StartRequest {
+  action: RequestAction.Start;
+  recordVideo: boolean;
+  tab: chrome.tabs.Tab;
+}
+
+export interface StopRequest {
+  action: RequestAction.Stop;
+}
+
+export type Request = StartRequest | StopRequest;
