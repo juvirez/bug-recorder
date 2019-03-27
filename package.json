@@ -11,6 +11,9 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.0.81",
+    "@types/dom-mediacapture-record": "^1.0.1",
+    "@types/file-saver": "^2.0.0",
+    "@types/jszip": "^3.1.5",
     "copy-webpack-plugin": "^5.0.0",
     "ts-loader": "^5.3.3",
     "typescript": "^3.3.4000",
