@@ -2,14 +2,15 @@ import { render } from "react-dom";
 import * as React from "react";
 import Fab from "@material-ui/core/Fab";
 import { Theme } from "@material-ui/core/styles/createMuiTheme";
-import { Lens } from "@material-ui/icons";
+import Lens from "@material-ui/icons/Lens";
+import Stop from "@material-ui/icons/Stop";
 import { StartRequest, RequestAction, StopRequest } from "./background";
 import { withStyles, createStyles, WithStyles } from "@material-ui/core";
 import grey from "@material-ui/core/colors/grey";
 
 const styles = (theme: Theme) =>
   createStyles({
-    recordingFab: {
+    recordFab: {
       margin: theme.spacing.unit,
       color: "#ec235a",
       backgroundColor: grey[50],
@@ -17,20 +18,29 @@ const styles = (theme: Theme) =>
         backgroundColor: grey[200]
       }
     },
+    stopFab: {
+      margin: theme.spacing.unit
+    },
     extendedIcon: {
       marginRight: theme.spacing.unit
     }
   });
 
 interface Props extends WithStyles<typeof styles> {}
+interface State {
+  recording: boolean;
+}
 
+// tslint:disable-next-line: variable-name
 const DecoratedPopup = withStyles(styles)(
-  class extends React.Component<Props> {
+  class extends React.Component<Props, State> {
     constructor(props: any) {
       super(props);
+      this.state = { recording: false };
     }
 
-    start() {
+    start = () => {
+      this.setState({ recording: true });
       const tabQueryInfo = { active: true, currentWindow: true };
       chrome.tabs.query(tabQueryInfo, (tabs: chrome.tabs.Tab[]) => {
         const currentTab = tabs.pop();
@@ -43,21 +53,37 @@ const DecoratedPopup = withStyles(styles)(
           chrome.runtime.sendMessage(request);
         }
       });
-    }
+    };
 
-    stop() {
+    stop = () => {
+      this.setState({ recording: false });
       const request: StopRequest = { action: RequestAction.Stop };
       chrome.runtime.sendMessage(request);
-    }
+    };
 
     render() {
       const classes = this.props.classes;
       return (
         <div>
-          <Fab variant="extended" className={classes.recordingFab}>
-            <Lens className={classes.extendedIcon} />
-            record the bug
-          </Fab>
+          {this.state.recording ? (
+            <Fab
+              variant="extended"
+              className={classes.stopFab}
+              onClick={this.stop}
+            >
+              <Stop className={classes.extendedIcon} />
+              stop recording
+            </Fab>
+          ) : (
+            <Fab
+              variant="extended"
+              className={classes.recordFab}
+              onClick={this.start}
+            >
+              <Lens className={classes.extendedIcon} />
+              record the bug
+            </Fab>
+          )}
         </div>
       );
     }
