@@ -23,5 +23,6 @@ module.exports = {
     path: path.resolve(__dirname, "dist"),
     filename: "[name].js"
   },
-  plugins: [new CopyPlugin(["assets", "manifest.json"])]
+  plugins: [new CopyPlugin(["assets", "manifest.json"])],
+  performance: { hints: false }
 };
