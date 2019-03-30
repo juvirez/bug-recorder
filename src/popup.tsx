@@ -47,8 +47,7 @@ const DecoratedPopup = withStyles(styles)(
         if (currentTab != null) {
           const request: StartRequest = {
             action: RequestAction.Start,
-            tab: currentTab,
-            recordVideo: true
+            tab: currentTab
           };
           chrome.runtime.sendMessage(request);
         }

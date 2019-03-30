@@ -1,93 +1,43 @@
-import { harFromMessages } from "chrome-har";
+import { VideoRecorder } from "./videoRecorder";
+import { DevToolsRecorder } from "./devToolsRecorder";
 import { saveAs } from "file-saver";
 import * as JSZip from "jszip";
-import { type } from "os";
 
-let debuggee: chrome.debugger.Debuggee = {};
-let harEvents: Object[] = [];
-let logEntries: LogEntry[] = [];
-let videoRecorder: MediaRecorder | null;
-let videoChunks: Blob[] = [];
+class BugRecorder {
+  private videoRecorder: VideoRecorder | null;
+  private devToolsRecorder: DevToolsRecorder | null;
 
-chrome.runtime.onMessage.addListener(
-  (request: Request, sender, sendResponse) => {
-    switch (request.action) {
-      case RequestAction.Start: {
-        chrome.tabCapture.capture({ video: true }, stream => {
-          if (stream == null) return;
-          videoRecorder = new MediaRecorder(stream, { mimeType: "video/webm" });
-          videoRecorder.ondataavailable = e => {
-            videoChunks.push(e.data);
-          };
-          videoRecorder.start();
-        });
-
-        debuggee = { tabId: request.tab.id };
-        chrome.debugger.attach(debuggee, "1.2", () => {
-          if (chrome.runtime.lastError) return;
-          chrome.debugger.sendCommand(debuggee, "Page.enable", {});
-          chrome.debugger.sendCommand(debuggee, "Network.enable", {});
-          chrome.debugger.sendCommand(debuggee, "Runtime.enable", {});
-        });
-        break;
-      }
-      case RequestAction.Stop: {
-        if (videoRecorder == null) {
-          stop();
-        } else {
-          videoRecorder.stream.getTracks().forEach(track => track.stop());
-          videoRecorder.onstop = () => {
-            stop();
-          };
-          videoRecorder.stop();
+  constructor() {
+    chrome.runtime.onMessage.addListener((request: Request) => {
+      switch (request.action) {
+        case RequestAction.Start: {
+          this.videoRecorder = new VideoRecorder();
+          this.devToolsRecorder = new DevToolsRecorder(request.tab);
+          this.videoRecorder.start();
+          this.devToolsRecorder.start();
+          break;
         }
-        break;
+        case RequestAction.Stop: {
+          if (this.videoRecorder == null || this.devToolsRecorder == null) {
+            break;
+          }
+          const zip = new JSZip();
+          this.devToolsRecorder.stop(zip);
+          this.videoRecorder.stop(zip).then(() => {
+            zip.generateAsync({ type: "blob" }).then(blob => {
+              saveAs(blob, "bug.zip");
+            });
+          });
+          this.devToolsRecorder = null;
+          this.videoRecorder = null;
+          break;
+        }
       }
-    }
+    });
   }
-);
-
-function stop() {
-  const videoBlob = new Blob(videoChunks, { type: "video/webm" });
-  chrome.debugger.detach(debuggee);
-  const har = harFromMessages(harEvents);
-  const log = logEntries
-    .map(entry => {
-      const value = entry.args.map((arg: LogEntryArg) => arg.value).join(" ");
-      const timestamp = new Date(entry.timestamp).toISOString();
-      return `${entry.type} ${timestamp} ${value}`;
-    })
-    .join("\n");
-  harEvents = [];
-  logEntries = [];
-  videoChunks = [];
-
-  const zip = new JSZip();
-  zip.file("har.har", JSON.stringify(har));
-  zip.file("console.log", log);
-  zip.file("screencast.webm", videoBlob);
-  zip.generateAsync({ type: "blob" }).then(blob => {
-    saveAs(blob, "site.zip");
-  });
 }
 
-chrome.debugger.onEvent.addListener((source, method, params) => {
-  if (method === "Runtime.consoleAPICalled") {
-    logEntries.push(params as LogEntry);
-  } else {
-    harEvents.push({ method, params });
-  }
-});
-
-interface LogEntry {
-  args: LogEntryArg[];
-  timestamp: number;
-  type: string;
-}
-
-interface LogEntryArg {
-  value: Object;
-}
+export const bugRecorder = new BugRecorder();
 
 export enum RequestAction {
   Start,
@@ -96,7 +46,6 @@ export enum RequestAction {
 
 export interface StartRequest {
   action: RequestAction.Start;
-  recordVideo: boolean;
   tab: chrome.tabs.Tab;
 }
 
