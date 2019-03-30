@@ -4,7 +4,13 @@ import Fab from "@material-ui/core/Fab";
 import { Theme } from "@material-ui/core/styles/createMuiTheme";
 import Lens from "@material-ui/icons/Lens";
 import Stop from "@material-ui/icons/Stop";
-import { StartRequest, RequestAction, StopRequest } from "./background";
+import {
+  StartRequest,
+  RequestAction,
+  StopRequest,
+  GetStatusRequest,
+  Status
+} from "./background";
 import { withStyles, createStyles, WithStyles } from "@material-ui/core";
 import grey from "@material-ui/core/colors/grey";
 
@@ -36,6 +42,14 @@ const DecoratedPopup = withStyles(styles)(
   class extends React.Component<Props, State> {
     constructor(props: any) {
       super(props);
+      const request: GetStatusRequest = {
+        action: RequestAction.GetStatus
+      };
+      chrome.runtime.sendMessage(request, (response: Status) => {
+        this.setState(prevState => {
+          return { recording: response === Status.Recording };
+        });
+      });
       this.state = { recording: false };
     }
 

@@ -8,32 +8,46 @@ class BugRecorder {
   private devToolsRecorder: DevToolsRecorder | null;
 
   constructor() {
-    chrome.runtime.onMessage.addListener((request: Request) => {
-      switch (request.action) {
-        case RequestAction.Start: {
-          this.videoRecorder = new VideoRecorder();
-          this.devToolsRecorder = new DevToolsRecorder(request.tab);
-          this.videoRecorder.start();
-          this.devToolsRecorder.start();
-          break;
-        }
-        case RequestAction.Stop: {
-          if (this.videoRecorder == null || this.devToolsRecorder == null) {
+    chrome.runtime.onMessage.addListener(
+      (
+        request: Request,
+        sender: chrome.runtime.MessageSender,
+        sendResponse: (response?: any) => void
+      ) => {
+        switch (request.action) {
+          case RequestAction.Start: {
+            this.videoRecorder = new VideoRecorder();
+            this.devToolsRecorder = new DevToolsRecorder(request.tab);
+            this.videoRecorder.start();
+            this.devToolsRecorder.start();
             break;
           }
-          const zip = new JSZip();
-          this.devToolsRecorder.stop(zip);
-          this.videoRecorder.stop(zip).then(() => {
-            zip.generateAsync({ type: "blob" }).then(blob => {
-              saveAs(blob, "bug.zip");
+          case RequestAction.Stop: {
+            if (this.videoRecorder == null || this.devToolsRecorder == null) {
+              break;
+            }
+            const zip = new JSZip();
+            this.devToolsRecorder.stop(zip);
+            this.videoRecorder.stop(zip).then(() => {
+              zip.generateAsync({ type: "blob" }).then(blob => {
+                saveAs(blob, "bug.zip");
+              });
             });
-          });
-          this.devToolsRecorder = null;
-          this.videoRecorder = null;
-          break;
+            this.devToolsRecorder = null;
+            this.videoRecorder = null;
+            break;
+          }
+          case RequestAction.GetStatus: {
+            if (this.videoRecorder != null && this.devToolsRecorder != null) {
+              sendResponse(Status.Recording);
+            } else {
+              sendResponse(Status.Waiting);
+            }
+            break;
+          }
         }
       }
-    });
+    );
   }
 }
 
@@ -41,7 +55,8 @@ export const bugRecorder = new BugRecorder();
 
 export enum RequestAction {
   Start,
-  Stop
+  Stop,
+  GetStatus
 }
 
 export interface StartRequest {
@@ -53,4 +68,13 @@ export interface StopRequest {
   action: RequestAction.Stop;
 }
 
-export type Request = StartRequest | StopRequest;
+export interface GetStatusRequest {
+  action: RequestAction.GetStatus;
+}
+
+export type Request = StartRequest | StopRequest | GetStatusRequest;
+
+export enum Status {
+  Waiting,
+  Recording
+}
