@@ -20,6 +20,7 @@ class BugRecorder {
             this.devToolsRecorder = new DevToolsRecorder(request.tab);
             this.videoRecorder.start();
             this.devToolsRecorder.start();
+            chrome.tabs.reload(request.tab.id as number);
             break;
           }
           case RequestAction.Stop: {
