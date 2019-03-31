@@ -50,6 +50,17 @@ class BugRecorder {
       }
     );
   }
+
+  cancelRecording() {
+    if (this.videoRecorder != null) {
+      this.videoRecorder.stop();
+      this.videoRecorder = null;
+    }
+    if (this.devToolsRecorder != null) {
+      this.devToolsRecorder.stop();
+      this.devToolsRecorder = null;
+    }
+  }
 }
 
 export const bugRecorder = new BugRecorder();

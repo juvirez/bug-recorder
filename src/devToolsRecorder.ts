@@ -1,5 +1,6 @@
 import { harFromMessages } from "chrome-har";
 import * as JSZip from "jszip";
+import { bugRecorder } from "./background";
 
 export class DevToolsRecorder {
   private debuggee: chrome.debugger.Debuggee;
@@ -13,17 +14,23 @@ export class DevToolsRecorder {
   }
 
   start() {
+    chrome.debugger.onDetach.addListener(this.onDetach);
+    chrome.debugger.onEvent.addListener(this.onEvent);
     chrome.debugger.attach(this.debuggee, "1.2", () => {
       chrome.debugger.sendCommand(this.debuggee, "Page.enable", {});
       chrome.debugger.sendCommand(this.debuggee, "Network.enable", {});
       chrome.debugger.sendCommand(this.debuggee, "Runtime.enable", {});
     });
-    chrome.debugger.onEvent.addListener(this.onEvent);
   }
 
-  stop(zip: JSZip) {
+  stop(zip?: JSZip) {
     chrome.debugger.onEvent.removeListener(this.onEvent);
-    chrome.debugger.detach(this.debuggee);
+    chrome.debugger.detach(this.debuggee, () => {
+      const lastError = chrome.runtime.lastError;
+      if (lastError !== undefined) {
+        console.log(lastError.message);
+      }
+    });
     const har = harFromMessages(this.harEvents);
     const log = this.logEntries
       .map(entry => {
@@ -36,8 +43,10 @@ export class DevToolsRecorder {
     this.harEvents = [];
     this.logEntries = [];
 
-    zip.file(`har.har`, JSON.stringify(har));
-    zip.file("console.log", log);
+    if (zip !== undefined) {
+      zip.file(`har.har`, JSON.stringify(har));
+      zip.file("console.log", log);
+    }
   }
 
   private onEvent = (
@@ -52,6 +61,12 @@ export class DevToolsRecorder {
     } else {
       this.harEvents.push({ method, params });
     }
+  };
+
+  private onDetach = (source: chrome.debugger.Debuggee) => {
+    if (source.tabId !== this.tab.id) return;
+
+    bugRecorder.cancelRecording();
   };
 }
 

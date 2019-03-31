@@ -17,18 +17,20 @@ export class VideoRecorder {
     });
   }
 
-  stop(zip: JSZip): Promise<void> {
+  stop(zip?: JSZip): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (this.mediaRecorder == null) {
         reject("Recording not started");
         return;
       }
       this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
-      this.mediaRecorder.onstop = () => {
-        const videoBlob = new Blob(this.mediaChunks, { type: "video/webm" });
-        zip.file("screencast.webm", videoBlob);
-        resolve();
-      };
+      if (zip !== undefined) {
+        this.mediaRecorder.onstop = () => {
+          const videoBlob = new Blob(this.mediaChunks, { type: "video/webm" });
+          zip.file("screencast.webm", videoBlob);
+          resolve();
+        };
+      }
       this.mediaRecorder.stop();
 
       this.mediaRecorder = null;
