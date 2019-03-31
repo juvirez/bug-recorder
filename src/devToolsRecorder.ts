@@ -1,6 +1,5 @@
 import { harFromMessages } from "chrome-har";
 import * as JSZip from "jszip";
-import { Tab } from "@material-ui/core";
 
 export class DevToolsRecorder {
   private debuggee: chrome.debugger.Debuggee;
@@ -34,31 +33,26 @@ export class DevToolsRecorder {
       })
       .join("\n");
 
-    let harFileName = "har.har";
-    if (this.tab.url !== undefined) {
-      harFileName = new URL(this.tab.url).hostname;
-    }
-
     this.harEvents = [];
     this.logEntries = [];
 
-    zip.file(`${harFileName}.har`, JSON.stringify(har));
+    zip.file(`har.har`, JSON.stringify(har));
     zip.file("console.log", log);
   }
 
-  private onEvent(
+  private onEvent = (
     source: chrome.debugger.Debuggee,
     method: string,
     params?: Object
-  ) {
-    if (source !== this.debuggee) return;
+  ) => {
+    if (source.tabId !== this.tab.id) return;
 
     if (method === "Runtime.consoleAPICalled") {
       this.logEntries.push(params as LogEntry);
     } else {
       this.harEvents.push({ method, params });
     }
-  }
+  };
 }
 
 interface LogEntry {
