@@ -10,7 +10,7 @@ import {
   StopRequest,
   GetStatusRequest,
   Status
-} from "./background";
+} from "./api";
 import { withStyles, createStyles, WithStyles } from "@material-ui/core";
 import grey from "@material-ui/core/colors/grey";
 

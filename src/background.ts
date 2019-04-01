@@ -2,6 +2,7 @@ import { VideoRecorder } from "./videoRecorder";
 import { DevToolsRecorder } from "./devToolsRecorder";
 import { saveAs } from "file-saver";
 import * as JSZip from "jszip";
+import { Request, RequestAction, Status } from "./api";
 
 class BugRecorder {
   private videoRecorder: VideoRecorder | null;
@@ -91,29 +92,3 @@ class BugRecorder {
 }
 
 export const bugRecorder = new BugRecorder();
-
-export enum RequestAction {
-  Start,
-  Stop,
-  GetStatus
-}
-
-export interface StartRequest {
-  action: RequestAction.Start;
-  tab: chrome.tabs.Tab;
-}
-
-export interface StopRequest {
-  action: RequestAction.Stop;
-}
-
-export interface GetStatusRequest {
-  action: RequestAction.GetStatus;
-}
-
-export type Request = StartRequest | StopRequest | GetStatusRequest;
-
-export enum Status {
-  Waiting,
-  Recording
-}
