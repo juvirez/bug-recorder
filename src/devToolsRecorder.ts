@@ -7,6 +7,10 @@ export class DevToolsRecorder {
   private tab: chrome.tabs.Tab;
   private harEvents: Object[] = [];
   private logEntries: LogEntry[] = [];
+  private requestIdToResponseReceivedParams: Map<
+    string,
+    ResponseReceivedParams
+  > = new Map();
 
   constructor(tab: chrome.tabs.Tab) {
     this.tab = tab;
@@ -31,7 +35,13 @@ export class DevToolsRecorder {
         console.log(lastError.message);
       }
     });
-    const har = harFromMessages(this.harEvents);
+
+    const harOptions = {
+      includeResourcesFromDiskCache: true,
+      includeTextFromResponseBody: true
+    };
+    const har = harFromMessages(this.harEvents, harOptions);
+
     const log = this.logEntries
       .map(entry => {
         const value = entry.args.map((arg: LogEntryArg) => arg.value).join(" ");
@@ -42,6 +52,7 @@ export class DevToolsRecorder {
 
     this.harEvents = [];
     this.logEntries = [];
+    this.requestIdToResponseReceivedParams = new Map();
 
     if (zip !== undefined) {
       zip.file(`har.har`, JSON.stringify(har));
@@ -56,11 +67,77 @@ export class DevToolsRecorder {
   ) => {
     if (source.tabId !== this.tab.id) return;
 
-    if (method === "Runtime.consoleAPICalled") {
-      this.logEntries.push(params as LogEntry);
-    } else {
-      this.harEvents.push({ method, params });
+    switch (method) {
+      case "Runtime.consoleAPICalled":
+        this.logEntries.push(params as LogEntry);
+        break;
+
+      case "Network.loadingFinished":
+        this.onLoadingFinished(params as NetworkLoadingFinishedParams);
+        this.harEvents.push({ method, params });
+        break;
+
+      case "Network.responseReceived":
+        const responseReceivedParams = params as ResponseReceivedParams;
+        this.requestIdToResponseReceivedParams.set(
+          responseReceivedParams.requestId,
+          responseReceivedParams
+        );
+        this.harEvents.push({ method, params: responseReceivedParams });
+        break;
+
+      default:
+        this.harEvents.push({ method, params });
+        break;
     }
+  };
+
+  private onLoadingFinished = (params: NetworkLoadingFinishedParams) => {
+    const responseReceivedParams = this.requestIdToResponseReceivedParams.get(
+      params.requestId
+    );
+
+    if (responseReceivedParams === undefined) {
+      return;
+    }
+
+    const resourceType = responseReceivedParams.type;
+    const mimeType = responseReceivedParams.response.mimeType;
+    if (
+      resourceType === "Image" ||
+      resourceType === "Font" ||
+      resourceType === "Media" ||
+      mimeType.includes("image") ||
+      mimeType.includes("video") ||
+      mimeType.includes("audio")
+    ) {
+      return;
+    }
+
+    chrome.debugger.sendCommand(
+      this.debuggee,
+      "Network.getResponseBody",
+      { requestId: params.requestId },
+      this.onResponseBody(responseReceivedParams)
+    );
+  };
+
+  private onResponseBody = (responseParams: ResponseReceivedParams) => (
+    responseBody: ResponseBody
+  ) => {
+    const lastError = chrome.runtime.lastError;
+    if (lastError !== undefined) {
+      console.warn(lastError.message, responseParams);
+      return;
+    }
+
+    responseParams.response = {
+      ...responseParams.response,
+      body: new Buffer(
+        responseBody.body,
+        responseBody.base64Encoded ? "base64" : undefined
+      ).toString()
+    };
   };
 
   private onDetach = (source: chrome.debugger.Debuggee) => {
@@ -79,3 +156,35 @@ interface LogEntry {
 interface LogEntryArg {
   value: Object;
 }
+
+interface NetworkLoadingFinishedParams {
+  requestId: string;
+}
+
+interface ResponseReceivedParams {
+  requestId: string;
+  response: ResponseBody;
+  type: ResourceType;
+}
+
+interface ResponseBody {
+  body: string;
+  base64Encoded: boolean;
+  status: number;
+  mimeType: string[];
+}
+
+type ResourceType =
+  | "Document"
+  | "Stylesheet"
+  | "Image"
+  | "Media"
+  | "Font"
+  | "Script"
+  | "TextTrack"
+  | "XHR"
+  | "Fetch"
+  | "EventSource"
+  | "WebSocket"
+  | "Manifest"
+  | "Other";
