@@ -32,9 +32,6 @@ export class VideoRecorder {
         };
       }
       this.mediaRecorder.stop();
-
-      this.mediaRecorder = null;
-      this.mediaChunks = [];
     });
   }
 }

@@ -4,13 +4,7 @@ import Fab from "@material-ui/core/Fab";
 import { Theme } from "@material-ui/core/styles/createMuiTheme";
 import Lens from "@material-ui/icons/Lens";
 import Stop from "@material-ui/icons/Stop";
-import {
-  StartRequest,
-  RequestAction,
-  StopRequest,
-  GetStatusRequest,
-  Status
-} from "./api";
+import { StartRequest, RequestAction, StopRequest, GetStatusRequest, Status } from "./api";
 import { withStyles, createStyles, WithStyles } from "@material-ui/core";
 import grey from "@material-ui/core/colors/grey";
 
@@ -79,20 +73,12 @@ const DecoratedPopup = withStyles(styles)(
       return (
         <div>
           {this.state.recording ? (
-            <Fab
-              variant="extended"
-              className={classes.stopFab}
-              onClick={this.stop}
-            >
+            <Fab variant="extended" className={classes.stopFab} onClick={this.stop}>
               <Stop className={classes.extendedIcon} />
               stop recording
             </Fab>
           ) : (
-            <Fab
-              variant="extended"
-              className={classes.recordFab}
-              onClick={this.start}
-            >
+            <Fab variant="extended" className={classes.recordFab} onClick={this.start}>
               <Lens className={classes.extendedIcon} />
               record the bug
             </Fab>

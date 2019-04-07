@@ -7,10 +7,7 @@ export class DevToolsRecorder {
   private tab: chrome.tabs.Tab;
   private harEvents: Object[] = [];
   private logEntries: LogEntry[] = [];
-  private requestIdToResponseReceivedParams: Map<
-    string,
-    ResponseReceivedParams
-  > = new Map();
+  private requestIdToResponseReceivedParams: Map<string, ResponseReceivedParams> = new Map();
 
   constructor(tab: chrome.tabs.Tab) {
     this.tab = tab;
@@ -29,10 +26,11 @@ export class DevToolsRecorder {
 
   stop(zip?: JSZip) {
     chrome.debugger.onEvent.removeListener(this.onEvent);
+
     chrome.debugger.detach(this.debuggee, () => {
       const lastError = chrome.runtime.lastError;
       if (lastError !== undefined) {
-        console.log(lastError.message);
+        console.warn(lastError.message);
       }
     });
 
@@ -50,21 +48,13 @@ export class DevToolsRecorder {
       })
       .join("\n");
 
-    this.harEvents = [];
-    this.logEntries = [];
-    this.requestIdToResponseReceivedParams = new Map();
-
     if (zip !== undefined) {
       zip.file(`har.har`, JSON.stringify(har));
       zip.file("console.log", log);
     }
   }
 
-  private onEvent = (
-    source: chrome.debugger.Debuggee,
-    method: string,
-    params?: Object
-  ) => {
+  private onEvent = (source: chrome.debugger.Debuggee, method: string, params?: Object) => {
     if (source.tabId !== this.tab.id) return;
 
     switch (method) {
@@ -79,10 +69,7 @@ export class DevToolsRecorder {
 
       case "Network.responseReceived":
         const responseReceivedParams = params as ResponseReceivedParams;
-        this.requestIdToResponseReceivedParams.set(
-          responseReceivedParams.requestId,
-          responseReceivedParams
-        );
+        this.requestIdToResponseReceivedParams.set(responseReceivedParams.requestId, responseReceivedParams);
         this.harEvents.push({ method, params: responseReceivedParams });
         break;
 
@@ -93,7 +80,7 @@ export class DevToolsRecorder {
   };
 
   private onLoadingFinished = (params: NetworkLoadingFinishedParams) => {
-    const responseReceivedParams = this.requestIdToResponseReceivedParams.get(
+    const responseReceivedParams: ResponseReceivedParams | undefined = this.requestIdToResponseReceivedParams.get(
       params.requestId
     );
 
@@ -122,9 +109,8 @@ export class DevToolsRecorder {
     );
   };
 
-  private onResponseBody = (responseParams: ResponseReceivedParams) => (
-    responseBody: ResponseBody
-  ) => {
+  private onResponseBody = (responseParams: ResponseReceivedParams) => (result?: Object) => {
+    const responseBody = result as ResponseBody;
     const lastError = chrome.runtime.lastError;
     if (lastError !== undefined) {
       console.warn(lastError.message, responseParams);
@@ -133,10 +119,7 @@ export class DevToolsRecorder {
 
     responseParams.response = {
       ...responseParams.response,
-      body: new Buffer(
-        responseBody.body,
-        responseBody.base64Encoded ? "base64" : undefined
-      ).toString()
+      body: new Buffer(responseBody.body, responseBody.base64Encoded ? "base64" : undefined).toString()
     };
   };
 

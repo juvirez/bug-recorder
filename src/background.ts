@@ -5,16 +5,12 @@ import * as JSZip from "jszip";
 import { Request, RequestAction, Status } from "./api";
 
 class BugRecorder {
-  private videoRecorder: VideoRecorder | null;
-  private devToolsRecorder: DevToolsRecorder | null;
+  private videoRecorder: VideoRecorder | null = null;
+  private devToolsRecorder: DevToolsRecorder | null = null;
 
   constructor() {
     chrome.runtime.onMessage.addListener(
-      (
-        request: Request,
-        sender: chrome.runtime.MessageSender,
-        sendResponse: (response?: any) => void
-      ) => {
+      (request: Request, sender: chrome.runtime.MessageSender, sendResponse: (response?: any) => void) => {
         switch (request.action) {
           case RequestAction.Start: {
             this.videoRecorder = new VideoRecorder();
