@@ -2,11 +2,11 @@ import { render } from "react-dom";
 import * as React from "react";
 import Fab from "@material-ui/core/Fab";
 import { Theme } from "@material-ui/core/styles/createMuiTheme";
-import Lens from "@material-ui/icons/Lens";
 import Stop from "@material-ui/icons/Stop";
 import { StartRequest, RequestAction, StopRequest, GetStatusRequest, Status } from "./api";
 import { withStyles, createStyles, WithStyles } from "@material-ui/core";
 import grey from "@material-ui/core/colors/grey";
+import { AppIcon } from "./icon";
 
 const styles = (theme: Theme) =>
   createStyles({
@@ -79,7 +79,9 @@ const DecoratedPopup = withStyles(styles)(
             </Fab>
           ) : (
             <Fab variant="extended" className={classes.recordFab} onClick={this.start}>
-              <Lens className={classes.extendedIcon} />
+              <span className={classes.extendedIcon}>
+                <AppIcon />
+              </span>
               record the bug
             </Fab>
           )}
