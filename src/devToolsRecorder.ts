@@ -7,6 +7,7 @@ export class DevToolsRecorder {
   private tab: chrome.tabs.Tab;
   private harEvents: Object[] = [];
   private logEntries: LogEntry[] = [];
+  private exceptions: ExceptionThrownParams[] = [];
   private requestIdToResponseReceivedParams: Map<string, ResponseReceivedParams> = new Map();
 
   constructor(tab: chrome.tabs.Tab) {
@@ -48,9 +49,19 @@ export class DevToolsRecorder {
       })
       .join("\n");
 
+    const exceptionLogs = this.exceptions
+      .map(exceptionParams => {
+        const timestamp = new Date(exceptionParams.timestamp).toISOString();
+        return `${timestamp} ${exceptionParams.exceptionDetails.exception.description}`;
+      })
+      .join("\n");
+
     if (zip !== undefined) {
       zip.file(`har.har`, JSON.stringify(har));
       zip.file("console.log", log);
+      if (exceptionLogs.length > 0) {
+        zip.file("exceptions.log", exceptionLogs);
+      }
     }
   }
 
@@ -60,6 +71,10 @@ export class DevToolsRecorder {
     switch (method) {
       case "Runtime.consoleAPICalled":
         this.logEntries.push(params as LogEntry);
+        break;
+
+      case "Runtime.exceptionThrown":
+        this.exceptions.push(params as ExceptionThrownParams);
         break;
 
       case "Network.loadingFinished":
@@ -171,3 +186,16 @@ type ResourceType =
   | "WebSocket"
   | "Manifest"
   | "Other";
+
+interface ExceptionThrownParams {
+  timestamp: number;
+  exceptionDetails: ExceptionDetails;
+}
+
+interface ExceptionDetails {
+  exception: Exception;
+}
+
+interface Exception {
+  description: string;
+}
