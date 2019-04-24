@@ -7,19 +7,27 @@ import { StartRequest, RequestAction, StopRequest, GetStatusRequest, Status } fr
 import { withStyles, createStyles, WithStyles } from "@material-ui/core";
 import grey from "@material-ui/core/colors/grey";
 import { AppIcon } from "./icon";
+import Typography from "@material-ui/core/Typography";
 
 const styles = (theme: Theme) =>
   createStyles({
     recordFab: {
-      margin: theme.spacing.unit,
+      width: "187px",
       color: "#ec235a",
+      marginBottom: "15px",
       backgroundColor: grey[50],
       "&:hover": {
         backgroundColor: grey[200]
       }
     },
     stopFab: {
-      margin: theme.spacing.unit
+      width: "187px",
+      marginBottom: "15px"
+    },
+    buttonWrapper: {
+      margin: "20px",
+      width: "187px",
+      textAlign: "center"
     },
     extendedIcon: {
       marginRight: theme.spacing.unit
@@ -70,23 +78,37 @@ const DecoratedPopup = withStyles(styles)(
 
     render() {
       const classes = this.props.classes;
-      return (
-        <div>
-          {this.state.recording ? (
+      if (this.state.recording) {
+        return (
+          <div className={classes.buttonWrapper}>
             <Fab variant="extended" className={classes.stopFab} onClick={this.stop}>
               <Stop className={classes.extendedIcon} />
               stop recording
             </Fab>
-          ) : (
+            <Typography variant="caption">
+              click when you have reproduced
+              <br />
+              the issue on the page
+            </Typography>
+          </div>
+        );
+      } else {
+        return (
+          <div className={classes.buttonWrapper}>
             <Fab variant="extended" className={classes.recordFab} onClick={this.start}>
               <span className={classes.extendedIcon}>
                 <AppIcon />
               </span>
-              record the bug
+              start recording
             </Fab>
-          )}
-        </div>
-      );
+            <Typography variant="caption">
+              this will reload the page
+              <br />
+              and start recording
+            </Typography>
+          </div>
+        );
+      }
     }
   }
 );

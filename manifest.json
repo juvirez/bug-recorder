@@ -2,7 +2,8 @@
   "manifest_version": 2,
 
   "name": "Bug Recorder",
-  "version": "1.0",
+  "description": "Website Issue Reporting Tool",
+  "version": "1.0.1",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
