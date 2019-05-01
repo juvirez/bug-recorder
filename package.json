@@ -21,6 +21,7 @@
     "@types/material-ui": "^0.21.6",
     "@types/react": "^16.8.8",
     "@types/react-dom": "^16.8.3",
+    "chrome-webstore-upload-cli": "^1.2.0",
     "copy-webpack-plugin": "^5.0.0",
     "ts-loader": "^5.3.3",
     "tslint": "^5.14.0",

@@ -8,3 +8,17 @@ before_script:
 
 script:
   - yarn build
+
+deploy:
+  provider: script
+  script: |
+    yarn exec webstore upload 
+    --source dist/
+    --extension-id ${EXTENSION_ID}
+    --client-id ${CLIENT_ID}
+    --client-secret ${CLIENT_SECRET}
+    --refresh-token ${REFRESH_TOKEN}
+    --auto-publish
+  on:
+    tags: true
+    branch: master
