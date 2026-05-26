@@ -1,34 +1,31 @@
 {
-  "license": "AML",
+  "name": "bug-recorder",
+  "description": "Website Issue Reporting Tool — records screencast, HAR and console into a single zip.",
+  "type": "module",
+  "version": "2.0.0",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
-    "build": "webpack",
-    "watch": "webpack --watch"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "@material-ui/core": "^3.9.2",
-    "@material-ui/icons": "^3.0.2",
-    "chrome-har": "juvirez/chrome-har",
-    "file-saver": "^2.0.1",
-    "jszip": "^3.2.1",
-    "react": "^16.8.5",
-    "react-dom": "^16.8.5"
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
-    "@types/chrome": "^0.0.81",
-    "@types/dom-mediacapture-record": "^1.0.1",
-    "@types/file-saver": "^2.0.0",
-    "@types/jszip": "^3.1.5",
-    "@types/material-ui": "^0.21.6",
-    "@types/react": "^16.8.8",
-    "@types/react-dom": "^16.8.3",
-    "chrome-webstore-upload-cli": "^1.2.0",
-    "copy-webpack-plugin": "^5.0.0",
-    "ts-loader": "^5.3.3",
-    "tslint": "^5.14.0",
-    "tslint-config-airbnb": "^5.11.1",
-    "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.3.4000",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.2.3"
+    "@crxjs/vite-plugin": "^2.4.0",
+    "@types/chrome": "^0.1.37",
+    "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "typescript": "~5.9.3",
+    "vite": "^8.0.0",
+    "vite-plugin-zip-pack": "^1.2.4"
   }
 }
