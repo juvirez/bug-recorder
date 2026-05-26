@@ -24,12 +24,14 @@ export default defineManifest({
     type: 'module',
   },
   permissions: [
+    'storage',
+    'alarms',
+    'offscreen',
+    'activeTab',
+  ],
+  optional_permissions: [
     'debugger',
     'tabCapture',
-    'downloads',
-    'storage',
-    'offscreen',
-    'alarms',
   ],
-  host_permissions: ['<all_urls>'],
+  optional_host_permissions: ['<all_urls>'],
 })
